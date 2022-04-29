@@ -20,10 +20,13 @@ This process is in line with how other package managers in the Python world work
 (see: [poetry][poetry] and [pdm][pdm]) and should continue to work this way as
 it can guarantee that `honda` is installed into an isolated environment.
 
-With that being said, what `conda` cannot currently is be installed purely via
+With that being said, what `conda` cannot currently is being installed purely via
 `pip` (poetry can)
 
+
 ## Configuration
+
+
 
 ## Operating system support (Win/OSX/*nix)
 

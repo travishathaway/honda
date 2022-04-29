@@ -9,6 +9,7 @@ license = "BSD-3"
 python = "^3.10"
 click = "^8.1.2"
 rich = "^12.3.0"
+click-help-colors = "^0.9.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"
@@ -18,3 +19,6 @@ pylint = "^2.13.7"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+honda = 'honda.cli.main:cli'

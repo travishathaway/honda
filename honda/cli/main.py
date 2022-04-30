@@ -11,10 +11,10 @@ from ._cmd_config import CMDS
 @click.group(
     invoke_without_command=True,
     cls=HelpColorsGroup,
-    help_headers_color='cyan',
-    help_options_color='green'
+    help_headers_color="cyan",
+    help_options_color="green",
 )
-@click.option('--version', help='prints the version of program', is_flag=True)
+@click.option("--version", help="prints the version of program", is_flag=True)
 @click.pass_context
 def cli(ctx: click.Context, version):
     """
@@ -29,7 +29,7 @@ def cli(ctx: click.Context, version):
     if ctx.invoked_subcommand is None:
         click.echo(ctx.get_help())
     ctx.ensure_object(dict)
-    ctx.obj['config'] = {}
+    ctx.obj["config"] = {}
 
 
 for cmd in CMDS:

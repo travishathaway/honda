@@ -1,4 +1,2 @@
-
-
 def remove():
-    print('remove')
+    print("remove")

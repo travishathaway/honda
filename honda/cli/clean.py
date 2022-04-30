@@ -1,4 +1,2 @@
-
-
 def clean():
-    print('clean')
+    print("clean")

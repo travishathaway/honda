@@ -1,2 +1,2 @@
 def init():
-    print('init')
+    print("init")

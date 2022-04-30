@@ -1,2 +1,2 @@
 def install():
-    print('install')
+    print("install")

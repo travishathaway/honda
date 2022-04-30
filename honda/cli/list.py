@@ -1,2 +1,2 @@
 def list_():
-    print('list')
+    print("list")

@@ -1,2 +1,2 @@
 def search():
-    print('search')
+    print("search")

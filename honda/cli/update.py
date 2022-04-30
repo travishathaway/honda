@@ -1,2 +1,2 @@
 def update():
-    print('update')
+    print("update")

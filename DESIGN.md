@@ -1,7 +1,7 @@
 # Design Ideas
 
 This file is dedicated to software design ideas for the `honda` package manager.
-It is organized along specific design issues one must deal with when writing 
+It is organized along specific design issues one must deal with when writing
 a package manager. While going over these issues, I will do my best to first describe
 how [conda][conda] works and deals with these issues. At the same time, I will
 highlight what works well, and propose my suggested changes.

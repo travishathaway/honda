@@ -1,2 +1,2 @@
 def compare():
-    print('compare')
+    print("compare")

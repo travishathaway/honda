@@ -6,7 +6,6 @@ a package manager. While going over these issues, I will do my best to first des
 how [conda][conda] works and deals with these issues. At the same time, I will
 highlight what works well, and propose my suggested changes.
 
-
 ## Installation
 
 The [conda][conda] package manager is currently available for installation via shell
@@ -23,15 +22,14 @@ it can guarantee that `honda` is installed into an isolated environment.
 With that being said, what `conda` cannot currently is being installed purely via
 `pip` (poetry can)
 
-
 ## Configuration
 
-
+Configuration will be very important for this command
 
 ## Operating system support (Win/OSX/*nix)
 
-
-
 [conda]: https://github.com/conda/conda
+
 [pdm]: https://pdm.fming.dev/
+
 [poetry]: https://python-poetry.org/

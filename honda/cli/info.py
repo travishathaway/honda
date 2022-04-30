@@ -1,9 +1,10 @@
+from honda.config import APP_NAME
 from .display.table import print_no_header_table
 
 
 def info():
     print_no_header_table(
-        "honda info",
+        APP_NAME,
         {
             "active_environment": "n/a",
             "something_else": "baladf asdf asdf ads f",

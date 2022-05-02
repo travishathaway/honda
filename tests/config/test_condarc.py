@@ -1,9 +1,13 @@
 import pytest
 
-from honda.config.condarc import CondaRC, merge_condarc
+from honda.config.condarc import CondarcConfig, merge_condarc
 
 MERGE_TEST_PARAMS = [
-    (CondaRC(channels=['bloop']), CondaRC(channels=['bleep']), {'channels': ['bleep']}),
+    (
+        CondarcConfig(channels=["bloop"]),
+        CondarcConfig(channels=["bleep"]),
+        {"channels": ["bleep"]},
+    ),
 ]
 
 

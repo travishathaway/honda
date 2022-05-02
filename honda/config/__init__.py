@@ -8,4 +8,3 @@ are the lowest priority and user config (e.g. '/home/user/.condarc') are the hig
 priority.
 
 """
-APP_NAME = 'honda 🚗'

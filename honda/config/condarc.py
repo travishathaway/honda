@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass, field
+from functools import reduce
 from pathlib import Path
 from typing import Literal, Union, Optional, Sequence, Any
 
@@ -11,13 +12,15 @@ logger = logging.getLogger(__name__)
 def read_yaml_file(path: Path) -> Optional[dict[str, Any]]:
     """Opens yaml file and returns value dict"""
     try:
-        with path.open('rb') as fp:
+        with path.open("rb") as fp:
             return load(fp, Loader=Loader)
     except error.YAMLError as exc:
         logger.error(exc)
 
 
-def merge_condarc(obj_one: 'CondaRC', obj_two: 'CondaRC') -> 'CondaRC':
+def merge_condarc(
+    obj_one: "CondarcConfig", obj_two: "CondarcConfig"
+) -> "CondarcConfig":
     """
     Provided two CondaRC objects, return one where right (obj_two) overrides properties
     on left (obj_one).
@@ -27,47 +30,51 @@ def merge_condarc(obj_one: 'CondaRC', obj_two: 'CondaRC') -> 'CondaRC':
 
     dict_one |= dict_two
 
-    return CondaRC(**dict_one)
+    return CondarcConfig(**dict_one)
 
 
-def get_condarc_obj(paths: Sequence[Path]) -> 'CondaRC':
+def get_condarc_obj(paths: Sequence[Path]) -> "CondarcConfig":
     """
     From a list of valid paths to condarc files, perform the desired merge operation
     and return a single CondaRC object.
     """
-    condarc_conifgs = tuple(
-        CondaRC(**yaml_config) for yaml_config in
-        (read_yaml_file(path) for path in paths)
+    # Load a single CondarcConfig object per file in our paths
+    condarc_configs = tuple(
+        CondarcConfig(**yaml_config)
+        for yaml_config in (read_yaml_file(path) for path in paths)
     )
-
-    return condarc_conifgs[0]
+    return reduce(merge_condarc, condarc_configs)
 
 
 @dataclass(slots=True)
-class CondaRC:
+class CondarcConfig:
     """
     Contains all variables which come from the condarc file
     """
+
     ####################################################
     #              Channel Configuration               #
     ####################################################
 
-    channels: list[str] = field(default_factory=lambda: ['defaults'])
+    channels: list[str] = field(default_factory=lambda: ["defaults"])
     """
     **aliases** -> channel
-    
+
     **env_var_string_delimiter** ->  ','
-    
+
     The list of conda channels to include for relevant operations.
     """
 
-    channel_alias: str = field(default='https://conda.anaconda.org')
+    channel_alias: str = field(default="https://conda.anaconda.org")
     """
     The prepended url location to associate with channel names.
     """
 
     default_channels: list[str] = field(
-        default_factory=lambda: ['https://repo.anaconda.com/pkgs/main', 'https://repo.anaconda.com/pkgs/r']
+        default_factory=lambda: [
+            "https://repo.anaconda.com/pkgs/main",
+            "https://repo.anaconda.com/pkgs/r",
+        ]
     )
     """
     **env_var_string_delimiter** ->  ','
@@ -92,7 +99,9 @@ class CondaRC:
     or left undefined, no channel exclusions will be enforced.
     """
 
-    custom_channels: dict[str, str] = field(default_factory=lambda: {'pkgs/pro': 'https://repo.anaconda.com'})
+    custom_channels: dict[str, str] = field(
+        default_factory=lambda: {"pkgs/pro": "https://repo.anaconda.com"}
+    )
     """
     A map of key-value pairs where the key is a channel name and the value
     is a channel location. Channels defined here override the default
@@ -153,7 +162,9 @@ class CondaRC:
     in conda 4.7.0.
     """
 
-    repodata_fns: list[str] = field(default_factory=lambda: ['current_repodata.json', 'repodata.json'])
+    repodata_fns: list[str] = field(
+        default_factory=lambda: ["current_repodata.json", "repodata.json"]
+    )
     """
     **env_var_string_delimiter** ->  ','
 
@@ -185,7 +196,7 @@ class CondaRC:
     envs_dirs: list[str] = field(default_factory=list)
     """
     **aliases** -> envs_path
-    
+
     **env_var_string_delimiter** ->  ':'
 
     The list of directories to search for named environments. When
@@ -283,7 +294,7 @@ class CondaRC:
     ssl_verify: bool = field(default=True)
     """
     **aliases** -> verify_ssl
-    
+
     Conda verifies SSL certificates for HTTPS requests, just like a web
     browser. By default, SSL verification is enabled, and conda operations
     will fail if a required url's certificate cannot be verified. Setting
@@ -296,7 +307,9 @@ class CondaRC:
     #               Solver Configuration               #
     ####################################################
 
-    aggressive_update_packages: list[str] = field(default_factory=lambda: ['ca-certificates', 'certifi', 'openssl'])
+    aggressive_update_packages: list[str] = field(
+        default_factory=lambda: ["ca-certificates", "certifi", "openssl"]
+    )
     """
     **env_var_string_delimiter** ->  ','
 
@@ -312,7 +325,9 @@ class CondaRC:
     detected.
     """
 
-    channel_priority: Literal['flexible', 'strict', 'disabled'] = field(default='flexible')
+    channel_priority: Literal["flexible", "strict", "disabled"] = field(
+        default="flexible"
+    )
     """
     Accepts values of 'strict', 'flexible', and 'disabled'. The default
     value is 'flexible'. With strict channel priority, packages in lower
@@ -329,7 +344,7 @@ class CondaRC:
     create_default_packages: list[str] = field(default_factory=list)
     """
     **env_var_string_delimiter** ->  ','
-    
+
     Packages that are by default added to a newly created environments.
     """
 
@@ -372,7 +387,7 @@ class CondaRC:
     similar to adding an entry to the create_default_packages list.
     """
 
-    experimental_solver: str = field(default='classic')
+    experimental_solver: str = field(default="classic")
     """
     A string to choose between the different solver logics implemented in
     conda. A solver logic takes care of turning your requested packages
@@ -418,7 +433,7 @@ class CondaRC:
     environments.
     """
 
-    path_conflict: Literal['clobber', 'warn', 'prevent'] = field(default='clobber')
+    path_conflict: Literal["clobber", "warn", "prevent"] = field(default="clobber")
     """
     The method by which conda handle's conflicting/overlapping paths
     during a create, install, or update operation. The value must be one
@@ -433,7 +448,7 @@ class CondaRC:
     disk mutations made to that point in the transaction.
     """
 
-    safety_checks: Literal['warn', 'enabled', 'disabled'] = field(default='warn')
+    safety_checks: Literal["warn", "enabled", "disabled"] = field(default="warn")
     """
     Enforce available safety guarantees during package installation. The
     value must be one of 'enabled', 'warn', or 'disabled'.
@@ -490,14 +505,14 @@ class CondaRC:
     #            Conda-build Configuration             #
     ####################################################
 
-    bld_path: str = field(default='')
+    bld_path: str = field(default="")
     """
     The location where conda-build will put built packages. Same as
     'croot', but 'croot' takes precedence when both are defined. Also used
     in construction of the 'local' multichannel.
     """
 
-    croot: str = field(default='')
+    croot: str = field(default="")
     """
     The location where conda-build will put built packages. Same as
     'bld_path', but 'croot' takes precedence when both are defined. Also
@@ -550,7 +565,7 @@ class CondaRC:
     activated environment.
     """
 
-    env_prompt: str = field(default='({default_env})')
+    env_prompt: str = field(default="({default_env})")
     """
     Template for prompt modification based on the active environment.
     Currently supported template variables are '{prefix}', '{name}', and
@@ -593,7 +608,7 @@ class CondaRC:
     verbosity: int = field(default=0)
     """
     **aliases** -> verbose
-    
+
     Sets output log level. 0 is warn. 1 is info. 2 is debug. 3 is trace.
     """
 

@@ -1,27 +1,27 @@
 import asyncio
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Sequence, Callable
 from urllib import parse
 
 import aiofiles
 import httpx
 
-from honda.cli.display.managers import progress_ctx_manager, ProgressDisplayManager
+from honda.cli.display.managers import DisplayManager
 
 CONCURRENT_LIMIT = 5
 
 
 async def limited_download(
-    urls: tuple[str],
+    urls: Sequence[str],
     dest: Path,
     limit: int = CONCURRENT_LIMIT,
-    display_ctx_manager: Optional[progress_ctx_manager] = None,
+    display_ctx_manager: Optional[Callable[..., DisplayManager]] = None,
 ) -> None:
     """
     Downloads files asynchronously but limits concurrency to `limit`
     """
     client = httpx.AsyncClient(http2=True)
-    sem = asyncio.Semaphore(limit)  # This allows us a to limit our concurrency.
+    sem = asyncio.Semaphore(limit)  # This allows us to limit our concurrency.
 
     async def _download_url(url, progress):
         async with sem:
@@ -36,7 +36,7 @@ async def download_url(
     client: httpx.AsyncClient,
     url: str,
     dest: Path,
-    display_manager: ProgressDisplayManager,
+    display_manager: DisplayManager,
 ) -> None:
     """Downloads single file using aiohttp.Session and saves file to disk"""
     file_url = parse.urlparse(url)

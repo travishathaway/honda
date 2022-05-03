@@ -1,11 +1,16 @@
 """
 Module that holds the cache service for our application
 """
+import asyncio
 import os
 import time
 from pathlib import Path
+from typing import Sequence, Callable
 from urllib import parse
-from typing import Sequence
+
+from honda import http
+from honda.cli.display.managers import DisplayManager
+from honda.config.main import Config  # only for type checking
 
 
 def get_cache_dir(platform: str, home_dir: str) -> Path:
@@ -51,7 +56,30 @@ def get_expired_files(
     files: Sequence[Path], cache_expiry: int = CACHE_EXPIRY_HOUR
 ) -> Sequence[Path]:
     """
-    Checks to see if the supplied files have passed their cache expiry
+    Checks to see if the supplied files have passed their cache expiry.
+
+    This can happen when:
+        - The file doesn't exist
+        - The file is past its expiry
     """
     now = time.time()
-    return tuple(file for file in files if file.lstat().st_mtime + cache_expiry <= now)
+    return tuple(
+        file
+        for file in files
+        if not file.exists() or file.lstat().st_mtime + cache_expiry <= now
+    )
+
+
+def cache_channel_repodata(
+    platform: str,
+    home: str,
+    repodata_urls: Sequence[str],
+    display_ctx_manager: Callable[..., DisplayManager],
+):
+    async def main():
+        cache_dir = get_cache_dir(platform, home)
+        await http.limited_download(
+            repodata_urls, cache_dir, display_ctx_manager=display_ctx_manager
+        )
+
+    asyncio.run(main())

@@ -5,7 +5,7 @@ from click_help_colors import HelpColorsGroup
 
 from honda.__version__ import __version__
 
-from ._cmd_config import CMDS
+from honda.cli._cmd_config import CMDS
 
 
 @click.group(

@@ -6,7 +6,7 @@ from honda.__version__ import __version__
 from honda.config import constants as const
 from honda.config.dependencies import app_config
 from honda.config.main import Config
-from .display.table import print_no_header_table
+from honda.cli.display.table import print_no_header_table
 
 
 @app_config

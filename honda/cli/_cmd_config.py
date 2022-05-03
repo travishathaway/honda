@@ -3,18 +3,18 @@ Holds the configuration for all sub-commands
 """
 import click
 
-from .clean import clean
-from .compare import compare
-from .config import config
-from .create import create
-from .info import info
-from .init import init
-from .install import install
-from .list import list_
-from .remove import remove
-from .repo import repo
-from .search import search
-from .update import update
+from honda.cli.commands.clean import clean
+from honda.cli.commands.compare import compare
+from honda.cli.commands.config import config
+from honda.cli.commands.create import create
+from honda.cli.commands.info import info
+from honda.cli.commands.init import init
+from honda.cli.commands.install import install
+from honda.cli.commands.list import list_
+from honda.cli.commands.remove import remove
+from honda.cli.commands.repo import repo
+from honda.cli.commands.search import search
+from honda.cli.commands.update import update
 from ._base import base_click_command
 
 CMDS = (

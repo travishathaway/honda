@@ -1,1 +1,1 @@
-from .main import cli
+from honda.cli.main import cli

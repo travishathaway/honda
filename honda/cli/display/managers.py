@@ -35,6 +35,6 @@ class ProgressDisplayManager:
 
 
 @contextmanager
-def ProgressCtxManager():  # pylint: no-qa
+def progress_ctx_manager():  # pylint: no-qa
     with Progress() as progress:
         yield ProgressDisplayManager(progress)

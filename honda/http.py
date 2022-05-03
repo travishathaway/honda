@@ -6,7 +6,7 @@ from urllib import parse
 import aiofiles
 import httpx
 
-from honda.cli.display.managers import ProgressCtxManager, ProgressDisplayManager
+from honda.cli.display.managers import progress_ctx_manager, ProgressDisplayManager
 
 CONCURRENT_LIMIT = 5
 
@@ -15,7 +15,7 @@ async def limited_download(
     urls: tuple[str],
     dest: Path,
     limit: int = CONCURRENT_LIMIT,
-    display_ctx_manager: Optional[ProgressCtxManager] = None,
+    display_ctx_manager: Optional[progress_ctx_manager] = None,
 ) -> None:
     """
     Downloads files asynchronously but limits concurrency to `limit`

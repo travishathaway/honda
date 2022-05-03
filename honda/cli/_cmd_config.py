@@ -27,10 +27,7 @@ CMDS = (
         create,
         "create",
         help="Create a new conda environment",
-        params=(
-            click.argument("folder", type=click.Path(exists=True)),
-            click.option("test", "-t" "--test"),
-        ),
+        params=(click.option("no_cache", "-x", "--no-cache", is_flag=True),),
     ),
     base_click_command(
         info, "info", help="Print information about the current environment"

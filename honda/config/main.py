@@ -1,11 +1,14 @@
 import os
-from urllib import parse
 import platform
+from pathlib import Path
 from typing import Optional, Sequence
+from urllib import parse
 
+from honda import cache
 from honda.config.condarc import CondarcConfig, get_condarc_obj
 from honda.config.env import EnvironmentConfig
 from honda.config import constants as const
+from honda.types.channel import Channel
 
 
 class Config:
@@ -52,12 +55,18 @@ class Config:
         return subdirs
 
     @property
+    def channels(self) -> Sequence[Channel]:
+        """Returns channels as channel objcts"""
+        # TODO: add in channels from CLI parameters
+        return tuple(Channel(url=channel) for channel in self.condarc.channels)
+
+    @property
     def channel_urls(self) -> Sequence[str]:
         """Returns all the channel URLs that are currently active"""
         channels = []
         if (
             const.DEFAULTS_CHANNEL_NAME in self.condarc.channels
-        ):  # TODO: this needs to CLI args too
+        ):  # TODO: this needs to account for CLI args too
             channels += [
                 f"{parse.urljoin(channel, subdir)}/"
                 for channel in self.env_config.default_channels
@@ -76,6 +85,15 @@ class Config:
     @property
     def channel_repodata_urls(self) -> Sequence[str]:
         return tuple(parse.urljoin(url, "repodata.json") for url in self.channel_urls)
+
+    @property
+    def channel_repodata_cache_files(self) -> Sequence[Path]:
+        """Returns what the filenames for the repo data should be"""
+        cache_dir = cache.get_cache_dir(self.env_config.platform, self.env_config.home)
+        return tuple(
+            cache_dir.joinpath(cache.get_cache_filename_from_channel_url(url))
+            for url in self.channel_repodata_urls
+        )
 
 
 CONFIG = Config()

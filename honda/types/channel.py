@@ -29,7 +29,7 @@ class Channel:
     Path to the channel's `repodata.json` cache file
 
     Examples:
-        - /home/user/.cache/honda/repo.anaconda.com-pkgs-main-noarch-repodata.json
+        - /home/user/.cache/🚗/repo.anaconda.com-pkgs-main-noarch-repodata.json
     """
 
     name: Optional[str] = field(default=None)

@@ -49,7 +49,7 @@ class Config:
         Returns applicable subdirs for the computer's operation system (e.g. 'linux-64', 'noarch')
         """
         subdirs = (
-            get_sys_subdir(),
+            get_sys_subdir(self.env_config.platform),
             "noarch",
         )
         return subdirs
@@ -102,9 +102,8 @@ CONFIG = Config()
 __ARCH_MAP = {"x86_64": "64", "x86": "32"}
 
 
-def get_sys_subdir() -> str:
+def get_sys_subdir(platfm: str) -> str:
     mach = platform.machine()
-    system = platform.system().lower()
     mach_num = __ARCH_MAP.get(mach)
 
-    return f"{system}-{mach_num}"
+    return f"{platfm}-{mach_num}"

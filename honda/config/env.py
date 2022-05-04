@@ -133,7 +133,12 @@ class EnvironmentConfig:
     @property
     def platform(self) -> str:
         """Grab the platform we are using (wrapper around platform module)"""
-        return platform.system().lower()
+        pltfm = platform.system().lower()
+
+        if 'darwin' in pltfm:
+            return 'osx'
+
+        return pltfm
 
 
 def get_search_path_from_config(config: EnvironmentConfig) -> Sequence[str]:

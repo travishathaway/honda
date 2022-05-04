@@ -8,8 +8,6 @@ Think of this as a "more static" source of configuration information.
 
 Another important source of "static" configuration is conda/models/enums.py.
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import struct
 from enum import Enum
 from os.path import join

@@ -8,9 +8,10 @@ from pathlib import Path
 from typing import Sequence, Callable
 from urllib import parse
 
+import click
+
 from honda import http
 from honda.cli.display.managers import DisplayManager
-from honda.config.main import Config  # only for type checking
 
 
 def get_cache_dir(platform: str, home_dir: str) -> Path:
@@ -22,14 +23,14 @@ def get_cache_dir(platform: str, home_dir: str) -> Path:
         cache_dir = Path(home_dir).joinpath(".cache/honda/")
     elif "win" in platform:
         cache_dir = Path(os.path.expandvars("%LOCALAPPDATA%\\honda\\"))  # TODO: windows
-    elif "darwin" in platform:
+    elif "osx" in platform:
         cache_dir = Path(home_dir).joinpath("Library/Caches/honda/")
     else:
-        raise NotImplemented(
+        raise click.ClickException(
             "Could not determine operating system type. Only Windows, Linux and OSX are supported."
         )
 
-    # If doesn't exists, let's create it
+    # If it doesn't exist, let's create it
     if not cache_dir.exists():
         cache_dir.mkdir(parents=True, exist_ok=True)
 

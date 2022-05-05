@@ -11,6 +11,7 @@ from urllib import parse
 import click
 
 from honda import http
+
 from honda.cli.display.managers import DisplayManager
 
 

@@ -5,7 +5,7 @@ import click
 from click_help_colors import HelpColorsCommand
 
 
-def base_click_command(func, *args, **kwargs) -> Callable:
+def base_click_command(func, name, *args, **kwargs) -> Callable:
     """
     This gives a single sport to define our command function.
     """
@@ -17,7 +17,7 @@ def base_click_command(func, *args, **kwargs) -> Callable:
 
     @wraps(func)
     @click.command(
-        *args,
+        name,
         cls=HelpColorsCommand,
         help_headers_color="cyan",
         help_options_color="green",
@@ -25,7 +25,7 @@ def base_click_command(func, *args, **kwargs) -> Callable:
         **kwargs
     )
     def wrapper(*args_, **kwargs_):
-        return func(*args_, **kwargs_)
+        return func(name)(*args_, **kwargs_)
 
     if params:
         for param in params:

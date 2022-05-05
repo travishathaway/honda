@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import Optional, Sequence
 from urllib import parse
 
+from click import pass_context
+
 from honda import cache
 from honda.config.condarc import CondarcConfig, get_condarc_obj
 from honda.config.env import EnvironmentConfig
@@ -19,7 +21,7 @@ class Config:
     accessed in the program.
     """
 
-    __slots__ = ("__env_config", "__condarc")
+    __slots__ = ("__env_config", "__condarc", "__cli_params")
 
     def __init__(
         self,
@@ -28,6 +30,7 @@ class Config:
     ):
         self.__env_config = env_config
         self.__condarc = condarc
+        self.__cli_params = None
 
     @property
     def env_config(self) -> EnvironmentConfig:
@@ -44,6 +47,16 @@ class Config:
         return self.__condarc
 
     @property
+    def cli_params(self) -> dict:
+        """This method can only be accessed within a click context"""
+
+        @pass_context
+        def get_params(ctx) -> dict:
+            return ctx.params
+
+        return get_params()
+
+    @property
     def subdirs(self) -> Sequence[str]:
         """
         Returns applicable subdirs for the computer's operation system (e.g. 'linux-64', 'noarch')
@@ -56,9 +69,31 @@ class Config:
 
     @property
     def channels(self) -> Sequence[Channel]:
-        """Returns channels as channel objcts"""
-        # TODO: add in channels from CLI parameters
-        return tuple(Channel(url=channel) for channel in self.condarc.channels)
+        """
+        Returns channels as channel objects. This does the work of merging
+        together command line parameters and .condarc file variables.
+
+        TODO: There's eventually going to have to be some logic to determine
+        the URL from a channel name. Some channels came as URLs others as
+        simply names.
+        """
+        channels = self.cli_params.get("channels", tuple()) + tuple(
+            self.condarc.channels
+        )
+
+        lookup = set()
+        channels = [
+            ch for ch in channels if ch not in lookup and lookup.add(ch) is None
+        ]
+
+        return tuple(
+            Channel(
+                url=channel,
+                platform=self.env_config.platform,
+                home=self.env_config.home,
+            )
+            for channel in channels
+        )
 
     @property
     def channel_urls(self) -> Sequence[str]:

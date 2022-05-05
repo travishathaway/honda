@@ -34,3 +34,7 @@ def cli(ctx: click.Context, version):
 
 for cmd in CMDS:
     cli.add_command(cmd)
+
+
+if __name__ == "__main__":
+    cli()

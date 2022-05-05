@@ -16,7 +16,8 @@ async def main(folder: Path) -> None:
     )
 
 
-def create(no_cache):
+def create(**kwargs):
+    pprint(CONFIG.channels)
     expired = cache.get_expired_files(CONFIG.channel_repodata_cache_files)
     # cache.cache_channel_repodata(
     #     CONFIG.env_config.platform, CONFIG.env_config.home, expired, display_ctx_manager

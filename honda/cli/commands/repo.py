@@ -28,6 +28,6 @@ def repo(channel) -> None:
     In order to give a better user experience, we cache all of the repo data
     that is available for the users computer.
     """
-    cache_dir = cache.get_cache_dir(CONFIG.env_config.platform, CONFIG.env_config.home)
+    cache_dir = cache.get_cache_dir()
     rprint("[green italic]Updating channel repo data...")
     asyncio.run(main(cache_dir))

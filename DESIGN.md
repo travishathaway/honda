@@ -24,7 +24,24 @@ With that being said, what `conda` cannot currently is being installed purely vi
 
 ## Configuration
 
-Configuration will be very important for this command
+The configuration for the application comes from a variety of sources in this order:
+
+1. Config file parameters marked with `#!final`, `#!top`, or `#!bottom`
+2. Environment variables `CONDA_*`
+3. CLI parameters
+4. Config file specified with `CONDARC`
+5. System and user config files (parsed in order)
+
+After collect the configuration from these locations, they will have to be merged
+accordingly according to the above rules. Additional things to watch out for:
+
+- dict -> merged
+- list -> merged
+- str -> clobbered (higher precedence wins out)
+
+At the end of this process, we should have a single object in our application where
+the configuration can be retrieved.
+
 
 ## Operating system support (Win/OSX/*nix)
 

@@ -1,8 +1,7 @@
 from functools import wraps
 from typing import Callable
 
-import click
-from click_help_colors import HelpColorsCommand
+import rich_click as click
 
 
 def base_click_command(func, name, *args, **kwargs) -> Callable:
@@ -16,14 +15,7 @@ def base_click_command(func, name, *args, **kwargs) -> Callable:
         del kwargs["params"]
 
     @wraps(func)
-    @click.command(
-        name,
-        cls=HelpColorsCommand,
-        help_headers_color="cyan",
-        help_options_color="green",
-        help_options_custom_colors={"--count": "red", "--subtract": "green"},
-        **kwargs
-    )
+    @click.command(name, *args, **kwargs)
     def wrapper(*args_, **kwargs_):
         return func(name)(*args_, **kwargs_)
 

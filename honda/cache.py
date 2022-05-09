@@ -2,34 +2,23 @@
 Module that holds the cache service for our application
 """
 import asyncio
-import os
 import time
 from pathlib import Path
 from typing import Sequence, Callable
 from urllib import parse
 
-import click
+import appdirs
 
 from honda import http
 
 from honda.cli.display.managers import DisplayManager
 
 
-def get_cache_dir(platform: str, home_dir: str) -> Path:
+def get_cache_dir() -> Path:
     """
     Determine a users operating system and return the best location to store cached files
     """
-    # TODO: design
-    if "linux" in platform:
-        cache_dir = Path(home_dir).joinpath(".cache/honda/")
-    elif "win" in platform:
-        cache_dir = Path(os.path.expandvars("%LOCALAPPDATA%\\honda\\"))  # TODO: windows
-    elif "osx" in platform:
-        cache_dir = Path(home_dir).joinpath("Library/Caches/honda/")
-    else:
-        raise click.ClickException(
-            "Could not determine operating system type. Only Windows, Linux and OSX are supported."
-        )
+    cache_dir = Path(appdirs.user_cache_dir('honda'))
 
     # If it doesn't exist, let's create it
     if not cache_dir.exists():
@@ -73,13 +62,11 @@ def get_expired_files(
 
 
 def cache_channel_repodata(
-    platform: str,
-    home: str,
     repodata_urls: Sequence[str],
     display_ctx_manager: Callable[..., DisplayManager],
 ):
     async def main():
-        cache_dir = get_cache_dir(platform, home)
+        cache_dir = get_cache_dir()
         await http.limited_download(
             repodata_urls, cache_dir, display_ctx_manager=display_ctx_manager
         )

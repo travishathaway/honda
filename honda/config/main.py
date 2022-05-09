@@ -124,7 +124,7 @@ class Config:
     @property
     def channel_repodata_cache_files(self) -> Sequence[Path]:
         """Returns what the filenames for the repo data should be"""
-        cache_dir = cache.get_cache_dir(self.env_config.platform, self.env_config.home)
+        cache_dir = cache.get_cache_dir()
         return tuple(
             cache_dir.joinpath(cache.get_cache_filename_from_channel_url(url))
             for url in self.channel_repodata_urls

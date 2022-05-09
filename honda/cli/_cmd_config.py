@@ -1,7 +1,7 @@
 """
 Holds the configuration for all sub-commands
 """
-import click
+import rich_click as click
 
 import importlib
 from typing import Callable

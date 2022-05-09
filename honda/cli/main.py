@@ -1,19 +1,17 @@
 import sys
 
-import click
-from click_help_colors import HelpColorsGroup
+# import click
+import rich_click as click
 
 from honda.__version__ import __version__
-
+from honda.config.constants import APP_NAME
 from honda.cli._cmd_config import CMDS
 
+click.rich_click.USE_RICH_MARKUP = True
+click.rich_click.USE_MARKDOWN_EMOJI = True
 
-@click.group(
-    invoke_without_command=True,
-    cls=HelpColorsGroup,
-    help_headers_color="cyan",
-    help_options_color="green",
-)
+
+@click.group(invoke_without_command=True)
 @click.option("--version", help="prints the version of program", is_flag=True)
 @click.pass_context
 def cli(ctx: click.Context, version):
@@ -23,7 +21,7 @@ def cli(ctx: click.Context, version):
     Please use `conda` if you actually want to get some work done!
     """
     if version is True:
-        click.echo(__version__)
+        click.echo(f'{APP_NAME} {__version__}')
         sys.exit(0)
 
     if ctx.invoked_subcommand is None:

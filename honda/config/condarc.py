@@ -1,10 +1,13 @@
 import logging
-from dataclasses import dataclass, field
 from functools import reduce
 from pathlib import Path
 from typing import Literal, Union, Optional, Sequence, Any
 
+from rich.text import Text
 from yaml import CLoader as Loader, load, error
+from pydantic import BaseModel, Field, ValidationError
+
+from honda.errors import RichClickException
 
 logger = logging.getLogger(__name__)
 
@@ -39,15 +42,54 @@ def get_condarc_obj(paths: Sequence[Path]) -> "CondarcConfig":
     and return a single CondaRC object.
     """
     # Load a single CondarcConfig object per file in our paths
-    condarc_configs = tuple(
-        CondarcConfig(**yaml_config)
-        for yaml_config in (read_yaml_file(path) for path in paths)
-    )
+    yaml_data = ((path, read_yaml_file(path)) for path in paths)
+
+    condarc_configs = []
+    for path, yaml_config in yaml_data:
+        try:
+            config = CondarcConfig(**yaml_config)
+            condarc_configs.append(config)
+        except ValidationError as exc:
+            raise RichClickException(format_config_error(exc, path))
+
     return reduce(merge_condarc, condarc_configs)
 
 
-@dataclass(slots=True)
-class CondarcConfig:
+CONDARC_PARSE_ERROR_SUGGESTION = (
+    'Please refer to our documentation to read more about configuration variables and the values the can have:\n'
+    'https://docs.conda.io/projects/conda/en/latest/configuration.html'
+)
+
+
+def format_config_error(exc: ValidationError, path: Path) -> Text:
+    """
+    Formats a PyDantic error as a rich Text object.
+    """
+    error_str = []
+    for err in exc.errors():
+        loc = ','.join(err.get('loc', tuple()))
+        ctx = err.get('ctx', {})
+        given = ctx.get('given')
+        permitted = ctx.get('permitted')
+        msg = err.get('msg')
+
+        # Add strings
+        error_str.append(f'\n{loc}: \n')
+        error_str.append(f'  {msg}\n')
+
+        if given and permitted:
+            error_str.append('  provided_value: ')
+            error_str.append(Text(f"'{given}'\n", 'italic grey58'))
+
+    error_str.append(f'\n\n{CONDARC_PARSE_ERROR_SUGGESTION}')
+
+    return Text.assemble(
+        (f"Unable to parse the following config file: {path}\n", "bold red"),
+        *error_str
+    )
+
+
+class CondarcConfig(BaseModel):
     """
     Contains all variables which come from the condarc file
     """
@@ -56,7 +98,7 @@ class CondarcConfig:
     #              Channel Configuration               #
     ####################################################
 
-    channels: list[str] = field(default_factory=lambda: ["defaults"])
+    channels: list[str] = Field(default_factory=lambda: ["defaults"])
     """
     **aliases** -> channel
 
@@ -65,12 +107,12 @@ class CondarcConfig:
     The list of conda channels to include for relevant operations.
     """
 
-    channel_alias: str = field(default="https://conda.anaconda.org")
+    channel_alias: str = Field(default="https://conda.anaconda.org")
     """
     The prepended url location to associate with channel names.
     """
 
-    default_channels: list[str] = field(
+    default_channels: list[str] = Field(
         default_factory=lambda: [
             "https://repo.anaconda.com/pkgs/main",
             "https://repo.anaconda.com/pkgs/r",
@@ -83,12 +125,12 @@ class CondarcConfig:
     multichannel.
     """
 
-    override_channels_enabled: bool = field(default=True)
+    override_channels_enabled: bool = Field(default=True)
     """
     Permit use of the --overide-channels command-line flag.
     """
 
-    whitelist_channels: list[str] = field(default_factory=list)
+    whitelist_channels: list[str] = Field(default_factory=list)
     """
     **env_var_string_delimiter** ->  ','
 
@@ -99,7 +141,7 @@ class CondarcConfig:
     or left undefined, no channel exclusions will be enforced.
     """
 
-    custom_channels: dict[str, str] = field(
+    custom_channels: dict[str, str] = Field(
         default_factory=lambda: {"pkgs/pro": "https://repo.anaconda.com"}
     )
     """
@@ -112,7 +154,7 @@ class CondarcConfig:
     add an entry 'conda-forge: https://anaconda-repo.dev/packages'.
     """
 
-    custom_multichannels: dict[str, str] = field(default_factory=dict)
+    custom_multichannels: dict[str, str] = Field(default_factory=dict)
     """
     A multichannel is a metachannel composed of multiple channels. The two
     reserved multichannels are 'defaults' and 'local'. The 'defaults'
@@ -124,7 +166,7 @@ class CondarcConfig:
     channel urls.
     """
 
-    migrated_channel_aliases: list[str] = field(default_factory=list)
+    migrated_channel_aliases: list[str] = Field(default_factory=list)
     """
     **env_var_string_delimiter** ->  ','
 
@@ -132,13 +174,13 @@ class CondarcConfig:
     between different Anaconda Repository instances.
     """
 
-    migrated_custom_channels: dict[str, str] = field(default_factory=dict)
+    migrated_custom_channels: dict[str, str] = Field(default_factory=dict)
     """
     A map of key-value pairs where the key is a channel name and the value
     is the previous location of the channel.
     """
 
-    add_anaconda_token: bool = field(default=True)
+    add_anaconda_token: bool = Field(default=True)
     """
     **aliases** -> add_binstar_token
 
@@ -149,20 +191,20 @@ class CondarcConfig:
     channels.
     """
 
-    allow_non_channel_urls: bool = field(default=False)
+    allow_non_channel_urls: bool = Field(default=False)
     """
     Warn, but do not fail, when conda detects a channel url is not a valid
     channel.
     """
 
-    restore_free_channel: bool = field(default=False)
+    restore_free_channel: bool = Field(default=False)
     """
     "Add the "free" channel back into defaults, behind "main" in priority.
     The "free" channel was removed from the collection of default channels
     in conda 4.7.0.
     """
 
-    repodata_fns: list[str] = field(
+    repodata_fns: list[str] = Field(
         default_factory=lambda: ["current_repodata.json", "repodata.json"]
     )
     """
@@ -175,7 +217,7 @@ class CondarcConfig:
     else to use an alternate index that has been reduced somehow.
     """
 
-    use_only_tar_bz2: Optional[bool] = field(default=None)
+    use_only_tar_bz2: Optional[bool] = Field(default=None)
     """
     A boolean indicating that only .tar.bz2 conda packages should be
     downloaded. This is forced to True if conda-build is installed and
@@ -183,7 +225,7 @@ class CondarcConfig:
     feeds it the new file format.
     """
 
-    repodata_threads: int = field(default=0)
+    repodata_threads: int = Field(default=0)
     """
     Threads to use when downloading and reading repodata.  When not set,
     defaults to None, which uses the default ThreadPoolExecutor behavior.
@@ -193,7 +235,7 @@ class CondarcConfig:
     #            Basic Conda Configuration             #
     ####################################################
 
-    envs_dirs: list[str] = field(default_factory=list)
+    envs_dirs: list[str] = Field(default_factory=list)
     """
     **aliases** -> envs_path
 
@@ -204,7 +246,7 @@ class CondarcConfig:
     the first writable location.
     """
 
-    pkgs_dirs: list[str] = field(default_factory=list)
+    pkgs_dirs: list[str] = Field(default_factory=list)
     """
     **env_var_string_delimiter** ->  ','
 
@@ -213,7 +255,7 @@ class CondarcConfig:
     and extracted into the first writable directory.
     """
 
-    default_threads: int = field(default=0)
+    default_threads: int = Field(default=0)
     """
     Threads to use by default for parallel operations.  Default is None,
     which allows operations to choose themselves.  For more specific
@@ -227,7 +269,7 @@ class CondarcConfig:
     #              Network Configuration               #
     ####################################################
 
-    client_ssl_cert: str = field(default=None)
+    client_ssl_cert: str = Field(default=None)
     """
     **aliases** -> client_cert
 
@@ -236,14 +278,14 @@ class CondarcConfig:
     client_ssl_cert for individual files.
     """
 
-    client_ssl_cert_key: str = field(default=None)
+    client_ssl_cert_key: str = Field(default=None)
     """
     **aliases** -> client_cert_key
 
     Used in conjunction with client_ssl_cert for a matching key file.
     """
 
-    local_repodata_ttl: Union[int, bool] = field(default=1)
+    local_repodata_ttl: Union[int, bool] = Field(default=1)
     """
     For a value of False or 0, always fetch remote repodata (HTTP 304
     responses respected). For a value of True or 1, respect the HTTP
@@ -252,12 +294,12 @@ class CondarcConfig:
     server for an update.
     """
 
-    offline: bool = field(default=False)
+    offline: bool = Field(default=False)
     """
     Restrict conda to cached download content and file:// based urls.
     """
 
-    proxy_servers: dict[str, str] = field(default_factory=dict)
+    proxy_servers: dict[str, str] = Field(default_factory=dict)
     """
     A mapping to enable proxy settings. Keys can be either (1) a
     scheme://hostname form, which will match any request to the given
@@ -267,31 +309,31 @@ class CondarcConfig:
     'user:password' inclusion enables HTTP Basic Auth with your proxy.
     """
 
-    remote_connect_timeout_secs: float = field(default=9.15)
+    remote_connect_timeout_secs: float = Field(default=9.15)
     """
     The number seconds conda will wait for your client to establish a
     connection to a remote url resource.
     """
 
-    remote_max_retries: int = field(default=3)
+    remote_max_retries: int = Field(default=3)
     """
     The maximum number of retries each HTTP connection should attempt.
     """
 
-    remote_backoff_factor: int = field(default=1)
+    remote_backoff_factor: int = Field(default=1)
     """
     The factor determines the time HTTP connection should wait for
     attempt.
     """
 
-    remote_read_timeout_secs: float = field(default=60.0)
+    remote_read_timeout_secs: float = Field(default=60.0)
     """
     Once conda has connected to a remote resource and sent an HTTP
     request, the read timeout is the number of seconds conda will wait for
     the server to send a response.
     """
 
-    ssl_verify: bool = field(default=True)
+    ssl_verify: bool = Field(default=True)
     """
     **aliases** -> verify_ssl
 
@@ -307,7 +349,7 @@ class CondarcConfig:
     #               Solver Configuration               #
     ####################################################
 
-    aggressive_update_packages: list[str] = field(
+    aggressive_update_packages: list[str] = Field(
         default_factory=lambda: ["ca-certificates", "certifi", "openssl"]
     )
     """
@@ -317,7 +359,7 @@ class CondarcConfig:
     latest possible version.
     """
 
-    auto_update_conda: bool = field(default=True)
+    auto_update_conda: bool = Field(default=True)
     """
     **aliases** -> self_update
 
@@ -325,7 +367,7 @@ class CondarcConfig:
     detected.
     """
 
-    channel_priority: Literal["flexible", "strict", "disabled"] = field(
+    channel_priority: Literal["flexible", "strict", "disabled"] = Field(
         default="flexible"
     )
     """
@@ -341,14 +383,14 @@ class CondarcConfig:
     True or False. True is now an alias to 'flexible'.
     """
 
-    create_default_packages: list[str] = field(default_factory=list)
+    create_default_packages: list[str] = Field(default_factory=list)
     """
     **env_var_string_delimiter** ->  ','
 
     Packages that are by default added to a newly created environments.
     """
 
-    disallowed_packages: list[str] = field(default_factory=list)
+    disallowed_packages: list[str] = Field(default_factory=list)
     """
     **aliases** -> disallow
 
@@ -358,14 +400,14 @@ class CondarcConfig:
     all packages.
     """
 
-    force_reinstall: bool = field(default=False)
+    force_reinstall: bool = Field(default=False)
     """
     Ensure that any user-requested package for the current operation is
     uninstalled and reinstalled, even if that package already exists in
     the environment.
     """
 
-    pinned_packages: list[str] = field(default_factory=list)
+    pinned_packages: list[str] = Field(default_factory=list)
     """
     **env_var_string_delimiter** ->  '&'
 
@@ -373,13 +415,13 @@ class CondarcConfig:
     parameter is in BETA, and its behavior may change in a future release.
     """
 
-    pip_interop_enabled: bool = field(default=False)
+    pip_interop_enabled: bool = Field(default=False)
     """
     Allow the conda solver to interact with non-conda-installed python
     packages.
     """
 
-    track_features: list[str] = field(default_factory=list)
+    track_features: list[str] = Field(default_factory=list)
     """
     **env_var_string_delimiter** -> ','
 
@@ -387,7 +429,7 @@ class CondarcConfig:
     similar to adding an entry to the create_default_packages list.
     """
 
-    experimental_solver: str = field(default="classic")
+    experimental_solver: str = Field(default="classic")
     """
     A string to choose between the different solver logics implemented in
     conda. A solver logic takes care of turning your requested packages
@@ -399,7 +441,7 @@ class CondarcConfig:
     #  Package Linking and Install-time Configuration  #
     ####################################################
 
-    allow_softlinks: bool = field(default=False)
+    allow_softlinks: bool = Field(default=False)
     """
     When allow_softlinks is True, conda uses hard-links when possible, and
     soft-links (symlinks) when hard-links are not possible, such as when
@@ -411,7 +453,7 @@ class CondarcConfig:
     recipe documentation).
     """
 
-    always_copy: bool = field(default=False)
+    always_copy: bool = Field(default=False)
     """
     **aliases** -> copy
 
@@ -419,7 +461,7 @@ class CondarcConfig:
     install rather than hard-linked.
     """
 
-    always_softlink: bool = field(default=False)
+    always_softlink: bool = Field(default=False)
     """
     **aliases** -> softlink
 
@@ -433,7 +475,7 @@ class CondarcConfig:
     environments.
     """
 
-    path_conflict: Literal["clobber", "warn", "prevent"] = field(default="clobber")
+    path_conflict: Literal["clobber", "warn", "prevent"] = Field(default="clobber")
     """
     The method by which conda handle's conflicting/overlapping paths
     during a create, install, or update operation. The value must be one
@@ -442,44 +484,44 @@ class CondarcConfig:
     'prevent'.
     """
 
-    rollback_enabled: bool = field(default=True)
+    rollback_enabled: bool = Field(default=True)
     """
     Should any error occur during an unlink/link transaction, revert any
     disk mutations made to that point in the transaction.
     """
 
-    safety_checks: Literal["warn", "enabled", "disabled"] = field(default="warn")
+    safety_checks: Literal["warn", "enabled", "disabled"] = Field(default="warn")
     """
     Enforce available safety guarantees during package installation. The
     value must be one of 'enabled', 'warn', or 'disabled'.
     """
 
-    extra_safety_checks: bool = field(default=False)
+    extra_safety_checks: bool = Field(default=False)
     """
     Spend extra time validating package contents.  Currently, runs sha256
     verification on every file within each package during installation.
     """
 
-    signing_metadata_url_base: str = field(default=None)
+    signing_metadata_url_base: str = Field(default=None)
     """
     Base URL for obtaining trust metadata updates (i.e., the `*.root.json`
     and `key_mgr.json` files) used to verify metadata and (eventually)
     package signatures.
     """
 
-    shortcuts: bool = field(default=True)
+    shortcuts: bool = Field(default=True)
     """
     Allow packages to create OS-specific shortcuts (e.g. in the Windows
     Start Menu) at install time.
     """
 
-    non_admin_enabled: bool = field(default=True)
+    non_admin_enabled: bool = Field(default=True)
     """
     Allows completion of conda's create, install, update, and remove
     operations, for non-privileged (non-root or non-administrator) users.
     """
 
-    separate_format_cache: bool = field(default=False)
+    separate_format_cache: bool = Field(default=False)
     """
     Treat .tar.bz2 files as different from .conda packages when filenames
     are otherwise similar. This defaults to False, so that your package
@@ -488,13 +530,13 @@ class CondarcConfig:
     represent the same content, set this to True.
     """
 
-    verify_threads: int = field(default=0)
+    verify_threads: int = Field(default=0)
     """
     Threads to use when performing the transaction verification step.
     When not set, defaults to 1.
     """
 
-    execute_threads: int = field(default=0)
+    execute_threads: int = Field(default=0)
     """
     Threads to use when performing the unlink/link transaction.  When not
     set, defaults to 1.  This step is pretty strongly I/O limited, and you
@@ -505,28 +547,28 @@ class CondarcConfig:
     #            Conda-build Configuration             #
     ####################################################
 
-    bld_path: str = field(default="")
+    bld_path: str = Field(default="")
     """
     The location where conda-build will put built packages. Same as
     'croot', but 'croot' takes precedence when both are defined. Also used
     in construction of the 'local' multichannel.
     """
 
-    croot: str = field(default="")
+    croot: str = Field(default="")
     """
     The location where conda-build will put built packages. Same as
     'bld_path', but 'croot' takes precedence when both are defined. Also
     used in construction of the 'local' multichannel.
     """
 
-    anaconda_upload: bool = field(default=False)
+    anaconda_upload: bool = Field(default=False)
     """
     **aliases** -> binstar_upload
 
     Automatically upload packages built with conda build to anaconda.org.
     """
 
-    conda_build: dict = field(default_factory=dict)
+    conda_build: dict = Field(default_factory=dict)
     """
     **aliases** -> conda-build
 
@@ -537,7 +579,7 @@ class CondarcConfig:
     #  Output, Prompt, and Flow Control Configuration  #
     ####################################################
 
-    always_yes: bool = field(default=False)
+    always_yes: bool = Field(default=False)
     """
     **aliases** -> yes
 
@@ -545,13 +587,13 @@ class CondarcConfig:
     conda operation, such as when running `conda install`.
     """
 
-    auto_activate_base: bool = field(default=True)
+    auto_activate_base: bool = Field(default=True)
     """
     Automatically activate the base environment during shell
     initialization.
     """
 
-    auto_stack: int = field(default=0)
+    auto_stack: int = Field(default=0)
     """
     Implicitly use --stack when using activate if current level of nesting
     (as indicated by CONDA_SHLVL environment variable) is less than or
@@ -559,13 +601,13 @@ class CondarcConfig:
     true enables it for one level.
     """
 
-    changeps1: bool = field(default=True)
+    changeps1: bool = Field(default=True)
     """
     When using activate, change the command prompt ($PS1) to include the
     activated environment.
     """
 
-    env_prompt: str = field(default="({default_env})")
+    env_prompt: str = Field(default="({default_env})")
     """
     Template for prompt modification based on the active environment.
     Currently supported template variables are '{prefix}', '{name}', and
@@ -577,48 +619,48 @@ class CondarcConfig:
     method.
     """
 
-    json: bool = field(default=False)
+    json__: bool = Field(alias="json", default=False)
     """
     Ensure all output written to stdout is structured json.
     """
 
-    notify_outdated_conda: bool = field(default=True)
+    notify_outdated_conda: bool = Field(default=True)
     """
     Notify if a newer version of conda is detected during a create,
     install, update, or remove operation.
     """
 
-    quiet: bool = field(default=False)
+    quiet: bool = Field(default=False)
     """
     Disable progress bar display and other output.
     """
 
-    report_errors: bool = field(default=False)
+    report_errors: bool = Field(default=False)
     """
     Opt in, or opt out, of automatic error reporting to core maintainers.
     Error reports are anonymous, with only the error stack trace and
     information given by `conda info` being sent.
     """
 
-    show_channel_urls: bool = field(default=None)
+    show_channel_urls: bool = Field(default=None)
     """
     Show channel URLs when displaying what is going to be downloaded.
     """
 
-    verbosity: int = field(default=0)
+    verbosity: int = Field(default=0)
     """
     **aliases** -> verbose
 
     Sets output log level. 0 is warn. 1 is info. 2 is debug. 3 is trace.
     """
 
-    unsatisfiable_hints: bool = field(default=True)
+    unsatisfiable_hints: bool = Field(default=True)
     """
     A boolean to determine if conda should find conflicting packages in
     the case of a failed install.
     """
 
-    unsatisfiable_hints_check_depth: int = field(default=2)
+    unsatisfiable_hints_check_depth: int = Field(default=2)
     """
     An integer that specifies how many levels deep to search for
     unsatisfiable dependencies. If this number is 1 it will complete the

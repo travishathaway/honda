@@ -135,8 +135,8 @@ class EnvironmentConfig:
         """Grab the platform we are using (wrapper around platform module)"""
         pltfm = platform.system().lower()
 
-        if 'darwin' in pltfm:
-            return 'osx'
+        if "darwin" in pltfm:
+            return "osx"
 
         return pltfm
 
@@ -163,34 +163,34 @@ def get_search_path_from_config(config: EnvironmentConfig) -> Sequence[str]:
 
     if config.conda_root:
         search_path += (
-            f"{config.conda_root}/.condarc",
-            f"{config.conda_root}/condarc",
-            f"{config.conda_root}/condarc.d/",
+            os.path.join(config.conda_root, ".condarc"),
+            os.path.join(config.conda_root, "condarc"),
+            os.path.join(config.conda_root, "condarc.d"),
         )
 
     if config.xdg_config_home:
         search_path += (
-            f"{config.xdg_config_home}/.condarc",
-            f"{config.xdg_config_home}/condarc",
-            f"{config.xdg_config_home}/condarc.d/",
+            os.path.join(config.xdg_config_home, ".condarc"),
+            os.path.join(config.xdg_config_home, "condarc"),
+            os.path.join(config.xdg_config_home, "condarc.d"),
         )
 
     if config.conda_prefix:
         search_path += (
-            f"{config.conda_prefix}/.condarc",
-            f"{config.conda_prefix}/condarc",
-            f"{config.conda_prefix}/condarc.d/",
-            f"{config.condarc}",
+            os.path.join(config.conda_prefix, ".condarc"),
+            os.path.join(config.conda_prefix, "condarc"),
+            os.path.join(config.conda_prefix, "condarc.d"),
         )
 
     search_path += (
-        f"{config.home}/.config/conda/.condarc",
-        f"{config.home}/.config/conda/condarc",
-        f"{config.home}/.config/conda/condarc.d/",
-        f"{config.home}/.conda/.condarc",
-        f"{config.home}/.conda/condarc",
-        f"{config.home}/.conda/condarc.d/",
-        f"{config.home}/.condarc",
+        os.path.join(config.home, ".config/conda/.condarc"),
+        os.path.join(config.home, ".config/conda/condarc"),
+        os.path.join(config.home, ".config/conda/condarc.d/"),
+        os.path.join(config.home, ".conda/.condarc"),
+        os.path.join(config.home, ".conda/condarc"),
+        os.path.join(config.home, ".conda/condarc.d/"),
+        os.path.join(config.home, ".condarc"),
+        config.condarc,
     )
 
     return search_path
